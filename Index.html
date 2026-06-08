@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학급 투표 앱</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 막대그래프 애니메이션 효과 */
+        .bar-transition {
+            transition: width 0.5s ease-in-out;
+        }
+        /* 로딩 중 버튼 비활성화 시 스타일 */
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body class="bg-indigo-50 min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+        
+        <!-- 헤더 영역 -->
+        <div class="bg-indigo-600 p-6 text-center text-white">
+            <h1 class="text-2xl font-extrabold mb-1">우리 반 투표</h1>
+            <p class="text-indigo-200 text-sm">다음 체험학습 장소는 어디가 좋을까?</p>
+        </div>
+
+        <div class="p-6">
+            <!-- 상태 표시 (로딩 및 알림) -->
+            <div id="loading-status" class="text-center text-sm text-indigo-600 mb-4 h-5 font-semibold">
+                서버에서 데이터를 불러오는 중...
+            </div>
+
+            <!-- 투표 버튼 영역 -->
+            <div class="space-y-4 mb-8" id="voting-section">
+                <!-- 항목 1 -->
+                <button id="btn-option1" onclick="submitVote('option1')" disabled class="vote-btn w-full relative overflow-hidden group bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white py-4 px-6 rounded-xl shadow-md transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg active:translate-y-0 text-lg font-bold flex justify-between items-center">
+                    <span>🎢 신나는 놀이공원</span>
+                    <span class="bg-white text-pink-500 text-xs py-1 px-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">선택하기</span>
+                </button>
+                
+                <!-- 항목 2 -->
+                <button id="btn-option2" onclick="submitVote('option2')" disabled class="vote-btn w-full relative overflow-hidden group bg-gradient-to-r from-blue-400 to-cyan-400 hover:from-blue-500 hover:to-cyan-500 text-white py-4 px-6 rounded-xl shadow-md transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg active:translate-y-0 text-lg font-bold flex justify-between items-center">
+                    <span>🏖️ 시원한 해수욕장</span>
+                    <span class="bg-white text-blue-500 text-xs py-1 px-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">선택하기</span>
+                </button>
+                
+                <!-- 항목 3 -->
+                <button id="btn-option3" onclick="submitVote('option3')" disabled class="vote-btn w-full relative overflow-hidden group bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white py-4 px-6 rounded-xl shadow-md transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg active:translate-y-0 text-lg font-bold flex justify-between items-center">
+                    <span>🏛️ 유익한 박물관</span>
+                    <span class="bg-white text-emerald-500 text-xs py-1 px-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">선택하기</span>
+                </button>
+            </div>
+
+            <!-- 결과 영역 (막대그래프) -->
+            <div id="results-section" class="border-t border-gray-100 pt-6">
+                <h2 class="text-lg font-bold text-gray-700 mb-4 flex justify-between items-end">
+                    투표 결과 <span id="total-votes" class="text-sm font-normal text-gray-500">총 0표</span>
+                </h2>
+                
+                <div class="space-y-5">
+                    <!-- 결과 항목 1 -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-semibold text-gray-700">놀이공원</span>
+                            <span id="count-option1" class="font-bold text-pink-500">0표 (0%)</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-3">
+                            <div id="bar-option1" class="bg-pink-500 h-3 rounded-full bar-transition" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 결과 항목 2 -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-semibold text-gray-700">해수욕장</span>
+                            <span id="count-option2" class="font-bold text-blue-500">0표 (0%)</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-3">
+                            <div id="bar-option2" class="bg-blue-500 h-3 rounded-full bar-transition" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 결과 항목 3 -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-semibold text-gray-700">박물관</span>
+                            <span id="count-option3" class="font-bold text-emerald-500">0표 (0%)</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-3">
+                            <div id="bar-option3" class="bg-emerald-500 h-3 rounded-full bar-transition" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 초기화 버튼 -->
+                <div class="mt-6 text-center">
+                     <button id="btn-reset" onclick="requestReset()" class="text-sm text-gray-400 hover:text-gray-500 underline transition-colors disabled:opacity-50" disabled>전체 투표 초기화</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 화면에 로딩 상태 표시 및 모든 버튼 잠금/해제 기능
+        function setLoading(isLoading, text) {
+            const statusDiv = document.getElementById('loading-status');
+            const buttons = document.querySelectorAll('button');
+            
+            if (isLoading) {
+                statusDiv.innerText = text || "서버 통신 중...";
+                buttons.forEach(btn => btn.disabled = true);
+            } else {
+                statusDiv.innerText = "";
+                buttons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        // 초기 데이터 로드 (앱 실행 시)
+        function initApp() {
+            setLoading(true, "서버에서 데이터를 불러오는 중...");
+            
+            // Google Apps Script 환경 체크 (에디터 외부 로딩 대응)
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function(votes) {
+                        updateResults(votes);
+                        setLoading(false);
+                    })
+                    .withFailureHandler(function(error) {
+                        document.getElementById('loading-status').innerText = "데이터 로딩 실패";
+                        alert("데이터를 불러오는데 실패했습니다: " + error.message);
+                    })
+                    .getVotes();
+            } else {
+                // 테스트 로컬 환경용 예외 처리
+                console.log("구글 서버를 찾을 수 없어 가상 모드로 실행합니다.");
+                const mockVotes = { option1: 12, option2: 8, option3: 5 };
+                updateResults(mockVotes);
+                setLoading(false);
+            }
+        }
+
+        // 투표 제출 함수
+        function submitVote(option) {
+            setLoading(true, "투표를 반영하는 중...");
+            
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function(updatedVotes) {
+                        updateResults(updatedVotes);
+                        setLoading(false);
+                    })
+                    .withFailureHandler(function(error) {
+                        alert("투표 처리에 실패했습니다: " + error.message);
+                        setLoading(false);
+                    })
+                    .addVote(option);
+            } else {
+                // 로컬 테스트용
+                alert("로컬 환경입니다. 투표 항목: " + option);
+                setLoading(false);
+            }
+        }
+
+        // 전체 초기화 요청 함수
+        function requestReset() {
+            // 사용자 확인 인터페이스 구성 (브라우저 Confirm 사용)
+            const confirmReset = confirm("정말로 모든 투표 결과를 초기화하시겠습니까?\n이 작업은 되돌릴 수 없으며 모든 사용자의 화면에 동시에 적용됩니다.");
+            
+            if (confirmReset) {
+                setLoading(true, "투표 결과를 초기화하는 중...");
+                
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    google.script.run
+                        .withSuccessHandler(function(resetVotes) {
+                            updateResults(resetVotes);
+                            setLoading(false);
+                        })
+                        .withFailureHandler(function(error) {
+                            alert("초기화 실패: " + error.message);
+                            setLoading(false);
+                        })
+                        .resetVotes();
+                } else {
+                    // 로컬 테스트용
+                    const clearedVotes = { option1: 0, option2: 0, option3: 0 };
+                    updateResults(clearedVotes);
+                    setLoading(false);
+                }
+            }
+        }
+
+        // 화면 UI 그래프 및 텍스트 실시간 반영 함수
+        function updateResults(votes) {
+            if (!votes) return;
+            
+            // 총 투표수 계산
+            const totalVotes = (votes.option1 || 0) + (votes.option2 || 0) + (votes.option3 || 0);
+            
+            // 총 투표수 표시
+            document.getElementById('total-votes').innerText = `총 ${totalVotes}표`;
+
+            // 각 항목별 퍼센트 계산 및 막대그래프 업데이트
+            for (let i = 1; i <= 3; i++) {
+                const optionKey = `option${i}`;
+                const count = votes[optionKey] || 0;
+                
+                // 퍼센트 계산 (0표일 때 NaN 방지)
+                const percentage = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
+
+                // 상단 텍스트 및 막대 너비 조절
+                document.getElementById(`count-${optionKey}`).innerText = `${count}표 (${percentage}%)`;
+                document.getElementById(`bar-${optionKey}`).style.width = `${percentage}%`;
+            }
+        }
+
+        // DOM 로딩 완료 즉시 실행
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
